@@ -191,37 +191,8 @@ tab_model(fem_agg,transform =  NULL, show.p = T, show.se = T, show.stat = T, sho
 ```
 
 
-Does the number of males in the group predict male male within group escalated competition? It is expected that males will be more involved in between group encounters than within group encounters, so there should not be an effect on physical aggression but it might be associated to a reduction in injury risk.
+Does the number of males in the group predict male male within group escalated competition? It is expected that males will be more involved in between group encounters than within group encounters, so there should not be an effect on physical aggression.
 ```{r}
-
-#Number of males in the group should predict reduce risk of injury
-male_inj = brm(data = males_inj,
-                family = bernoulli,
-                event ~  scaled_male + is_mating#No significant interaction with mating suggest is not necessarily happening during the mating period 
-                 + (1|id) + (1|year_bim),
-                cores = 4,
-                prior = c(prior(normal(0,1), class = "b")),
-                control = list(adapt_delta = 0.9),
-                iter = 10000)#yes
-
-#saveRDS(male_inj, file = paste0(directory,"Bmrs models/male_inj.rds"))
-
-#Post-hoc check
-#Load model
-male_inj <- readRDS(paste0(directory,"Bmrs models/male_inj.rds"))
-#Posterior predictive check
-pp_check(male_inj)#Prediction for DV and actual DV: OK
-
-
-#Compute probability
-male_odds = exp(-0.24)
-#prob
-male_odds/(1+male_odds)
-
-#Get table with results
-tab_model(male_inj,transform =  NULL, show.p = T, show.se = T, show.stat = T, show.icc = F, show.re.var = F, dv.labels = "Injury risk",show.ci = 0.89, show.r2 = F)
-
-
 #Number of males in the group (linearly correlated to group size) should not predict intragroup male-male physical aggression
 male_agg = brm(data = males_agg,
                 family = bernoulli,
@@ -246,13 +217,41 @@ tab_model(male_agg,transform =  NULL, show.p = T, show.se = T, show.stat = T, sh
 
 ```
 
+Ruling out inter-sexual competition over food as driver of injuries
+```{r}
 
+male_fem_all =  brm(data = females_agg,
+                family = bernoulli,
+                from_MWS ~ scaled_group + is_mating 
+                + offset(log(obs_time +1)) + (1|id) + (1|year_bim),
+                cores = 4,
+                prior = c(prior(normal(0,1), class = "b")),
+                control = list(adapt_delta = 0.9),
+                iter = 10000)#Seems to be the opposite
+
+
+#saveRDS(male_fem_all, file = paste0(directory,"Bmrs models/male_fem_all.rds"))
+
+#Post-hoc check
+#Load model
+male_fem_all <- readRDS(paste0(directory,"Bmrs models/male_fem_all.rds"))
+#Posterior predictive check
+pp_check(male_fem_all)#Prediction for DV and actual DV: OKf
+
+#Get table with results
+tab_model(male_fem_all,transform =  NULL, show.p = T, show.se = T, show.stat = T, show.icc = F, show.re.var = F, dv.labels = "Risk of physical aggression",show.ci = 0.89, show.r2 = F)
+
+#Female to Male aggression events are very rare, thus not possible to explore
+table(males_agg$from_FWS)#9/3154 bimonthly intervals
+
+```
 
 If escalated aggression arise due to reproductive strategies, sex-ratio is a better predictor.
 If driven by reproductive strategies:
 1) If males rely on coercion to obtain mating opportunities, we would expect higher injury risk in females living in groups with smaller sex ratio (F:M) during the reproductive season, due to higher male to female physical aggression.
 2) If males contest over females, we would expect males to be more likely to be injured in groups with smaller sex ratio during the reproductive season due to higher male-male fierce aggression.
 3) Although less common, it is also possible that females contest over males when they are scarce (higher sex ratio). Thus females might be more likely to be injured in groups with higher sex ratio due to greater female-female aggression.
+
 
 Does sex-ratio predict injury risk in males and females during the reproductive season? 
 
@@ -293,6 +292,7 @@ male_odds/(1+male_odds)
 tab_model(model_SR_mating,transform =  NULL, show.p = T, show.se = T, show.stat = T, show.icc = F, show.re.var = F, dv.labels = "Injury risk",show.ci = 0.89, show.r2 = F)
 
 ```
+
 
 What are the drivers of the sex-differences on injury risk with sex ratio?
 
@@ -458,33 +458,6 @@ tab_model(fem_NCagg,transform =  NULL, show.p = T, show.se = T, show.stat = T, s
 
 ```
 
-It is possible that intersexual competition over food might also exist. In this case, females might be more likely to be aggressed by males when living in larger groups.
-```{r}
-
-male_fem_all =  brm(data = females_agg,
-                family = bernoulli,
-                from_MWS ~ scaled_group + is_mating 
-                + offset(log(obs_time +1)) + (1|id) + (1|year_bim),
-                cores = 4,
-                prior = c(prior(normal(0,1), class = "b")),
-                control = list(adapt_delta = 0.9),
-                iter = 10000)#Seems to be the opposite
-
-
-#saveRDS(male_fem_all, file = paste0(directory,"Bmrs models/male_fem_all.rds"))
-
-#Post-hoc check
-#Load model
-male_fem_all <- readRDS(paste0(directory,"Bmrs models/male_fem_all.rds"))
-#Posterior predictive check
-pp_check(male_fem_all)#Prediction for DV and actual DV: OKf
-
-#Get table with results
-tab_model(male_fem_all,transform =  NULL, show.p = T, show.se = T, show.stat = T, show.icc = F, show.re.var = F, dv.labels = "Risk of physical aggression",show.ci = 0.89, show.r2 = F)
-
-
-```
-
 Female-female competition over mates is expected to be strong in systems with female synchrony in their fertile phase and where females exert mate choice, like rhesus. However, given the despotic dominance hierarchy it is probably that this intense competition is reflected in greater use of submissive cues rather than physical aggression.
 ```{r}
 
@@ -509,8 +482,6 @@ pp_check(male_fem_all)#Prediction for DV and actual DV: OKf
 #Get table with results
 tab_model(male_fem_all,transform =  NULL, show.p = T, show.se = T, show.stat = T, show.icc = F, show.re.var = F, dv.labels = "Risk of physical aggression",show.ci = 0.89, show.r2 = F)
 ```
-
-
 
 
 PLOTS
@@ -597,37 +568,37 @@ Fig 2: Drivers of injuries in females and males as a function of group size
 #Female-female aggression
 fem_agg <- readRDS(paste0(directory,"Bmrs models/fem_agg.rds"))
 
+#Male-female aggression
+male_fem_all <- readRDS(paste0(directory,"Bmrs models/male_fem_all.rds"))
+
 #Male-male aggression
 male_agg <- readRDS(paste0(directory,"Bmrs models/male_agg.rds"))
-
-#Male injury risk with males in group
-male_inj <- readRDS(paste0(directory,"Bmrs models/male_inj.rds"))
 
 
 #Fig2A: posterior distributions for models
 #extract posteriors
 post1 = posterior_samples(fem_agg)
-post2 = posterior_samples(male_agg)
-post3 = posterior_samples(male_inj)
+post2 = posterior_samples(male_fem_all)
+post3 = posterior_samples(male_agg)
 
 posts = bind_cols(post1 %>% select(b_scaled_fem),
-                  post2 %>% select(b_scaled_male),
+                  post2 %>% select(b_scaled_group),
                   post3 %>% select(b_scaled_male)) %>%
         gather() %>%
         mutate(predictor = str_remove(key, "b_"))
 
 posts %<>% mutate(predictor = ifelse(predictor == "scaled_fem","Female_count", predictor),
-                  predictor = ifelse(predictor =="scaled_male...2","Male_count.1", predictor),
-                  predictor = ifelse(predictor == "scaled_male...3","Male_count.2", predictor),
-                  predictor = ordered(predictor, levels = c("Male_count.2","Male_count.1","Female_count")))
+                  predictor = ifelse(predictor =="scaled_group","Group_size", predictor),
+                  predictor = ifelse(predictor == "scaled_male","Male_count", predictor),
+                  predictor = ordered(predictor, levels = c("Male_count","Group_size","Female_count")))
 
-Fig2A = posts %>% 
+Fig2 = posts %>% 
   ggplot(aes(x = value, y = predictor, fill = predictor)) +
   stat_halfeye(slab_alpha = 0.5, .width = c(0.66,0.89)) +
-  scale_fill_manual(values = c("goldenrod2","goldenrod2","cyan4")) +
-  geom_vline(xintercept = 0, linetype =  "dashed", color = "gray28", size = 1)+
-  scale_color_manual(values = c("goldenrod2","goldenrod2","cyan4")) + scale_x_continuous(name = c("Estimate")) +
-  scale_y_discrete(name = c("Density"), expand = c(0, 0.1), labels = c( "Male count","Male count", "Female count"))+ theme_bw() +
+  scale_fill_manual(values = c("goldenrod2","cyan4","cyan4")) +
+  geom_vline(xintercept = 0, linetype =  "dashed", color = "gray28", linewidth = 1)+
+  scale_color_manual(values = c("goldenrod2","cyan4","cyan4")) + scale_x_continuous(name = c("Estimate")) +
+  scale_y_discrete(name = c("Density"), expand = c(0, 0.1), labels = c( "Male count","Group size", "Female count"))+ theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
         text = element_text(size = 18),
@@ -1072,65 +1043,28 @@ FigS4B = post1 %>%
 ```
 
 
-FigS5: Effect of group size on male-female physical aggression
+FigS5: Effect of sex ratio on female-female non-contact
 ```{r}
 
 #Load model
-male_fem_all <- readRDS(paste0(directory,"Bmrs models/male_fem_all.rds"))
+fem_SR_NCagg <- readRDS(paste0(directory,"Bmrs models/fem_SR_NCagg.rds"))
 
 #extract posterior
-post = posterior_samples(male_fem_all)
+post = posterior_samples(fem_SR_NCagg)
 
-FigS5A = post %>% 
-  ggplot(aes(x = b_scaled_group)) +
+FigS5 = post %>% 
+  ggplot(aes(x = b_scaled_SR)) +
   stat_halfeye(fill = "cyan4",slab_alpha = 0.5, .width = c(0.66,0.89)) +
   geom_vline(xintercept = 0, linetype =  "dashed", color = "gray28", size = 1)+
   scale_fill_manual(values = c("cyan4")) +
   scale_color_manual(values = c("cyan4")) + scale_x_continuous(name = c("Estimate")) +
-  scale_y_discrete(name = c("Density"), expand = c(0, 0.01), labels = c("Group size")) + theme_bw() +
+  scale_y_discrete(name = c("Density"), expand = c(0, 0.01), labels = c("Sex Ratio")) + theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
         text = element_text(size = 18),
         axis.text.y=element_text(size=15)) 
 
-#FigS5B: effect of sex-ratio en male to female aggression
-draws = as_draws_df(male_fem_all)
-length = 200
-n_draw = 40
 
-#Remove values outside 89%CI
-draws %<>% filter(!(b_scaled_group > quantile(b_scaled_group, 0.945)|b_scaled_group < quantile(b_scaled_group, 0.055)))
-
-post1 = draws %>%
-  tibble() %>%
-  slice_sample(n = n_draw) %>%
-  expand(nesting(.draw, b_Intercept,b_scaled_group),
-         scaled_group = seq(-1.8, to = 2.5, length.out = length)) %>%
-  mutate(event = inv_logit_scaled(b_Intercept + b_scaled_group*scaled_group),
-         group_size = scaled_group*sd(surv_ages$group_size) + mean(surv_ages$group_size)) %>%
-  select(.draw,event,group_size)
-
-#Transpose dataframe to be able to plot by sex
-#Convert aggression events to scale of y-axis
-surv_ages %<>% mutate(event1 = ifelse(event == 1, 0.09,event))
-med = post1 %>% group_by(group_size) %>% summarise(med = median(event))
-
-
-FigS5B = post1 %>%
-  ggplot(aes(x = group_size)) +
-  geom_line(aes(y = event, group = .draw),
-            color = "cyan4", size = 3, alpha = 0.08) +
-  geom_point(data = med, aes(y = med), size = 1.5, colour ="cyan4" ) +
-  #geom_jitter(data = mating_fem,
-              #aes(y = event1), colour = "antiquewhite4",
-              #size = 4, alpha = 0.2, height = 0.0007)  +
-  scale_x_continuous(name = c("Group size")) +
-  scale_y_continuous(name = c("Aggression risk")) +
-  coord_cartesian(xlim = range(surv_ages$group_size)) + theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
-        text = element_text(size = 18),
-        axis.text.y=element_text(size=15),axis.text.x=element_text(size=15)) 
 
 
 ```
